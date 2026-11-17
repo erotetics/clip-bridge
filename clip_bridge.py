@@ -61,8 +61,9 @@ _REPO_ROOT = _HERE.parent if _FROM_SOURCE else pathlib.Path.home()
 
 # Auto-answer: when a clip arrives WITH a note, spawn a headless agent that
 # pulls the capture and answers the note; the extension polls /answer and
-# paints the reply onto the page. Disable with CLIP_AUTO_ANSWER=0.
-AUTO_ANSWER = os.environ.get("CLIP_AUTO_ANSWER") != "0"
+# paints the reply onto the page. Opt-in (CLIP_AUTO_ANSWER=1): it spends the
+# user's Claude usage, so it must never run without them asking for it.
+AUTO_ANSWER = os.environ.get("CLIP_AUTO_ANSWER") == "1"
 
 
 async def _auto_answer(answer_id: str, note: str) -> None:

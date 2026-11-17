@@ -208,3 +208,9 @@ def test_try_bind_refuses_taken_port(monkeypatch):
     sock = server._try_bind()  # freed → we take it
     assert sock is not None
     sock.close()
+
+
+def test_auto_answer_is_opt_in(client, monkeypatch):
+    # Off by default: a clip with a note must not spawn a headless agent.
+    monkeypatch.setattr(server, "AUTO_ANSWER", False)
+    assert client.post("/capture", json=_body(note="why is this red?")).json()["answer_id"] is None

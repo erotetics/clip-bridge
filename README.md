@@ -181,6 +181,11 @@ writes a punch-list to `reviews/`. Fully hands-free, but it's a *separate* agent
 run, not your interactive session. Good for "clip and forget"; repoint the output
 to a desktop notification / PR comment as desired.
 
+**C. Auto-answer on the page** — `CLIP_AUTO_ANSWER=1`. When a clip arrives with
+a note (a question), the bridge runs a headless `claude -p` that pulls the
+capture and answers it; the extension paints the reply onto the page. Needs the
+Claude Code CLI on `PATH` and uses your Claude usage, hence off by default.
+
 ## Notes / next
 
 - **HTTP transport, not stdio** — the bridge must outlive any one session and
