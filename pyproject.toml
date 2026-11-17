@@ -1,14 +1,18 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "clip-bridge"
-version = "0.1.0"
-description = "Local bridge: pipe clipped browser pages (screenshots + metadata) into Claude Code over MCP."
+version = "0.2.0"
+description = "Pipe pages clipped with the Clip browser extension (screenshots, selectors, console errors) into any MCP client: Claude Code, Cursor, Claude Desktop, VS Code."
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Erotetic Arts Ltd", email = "hello@erotetics.com" }]
+keywords = ["mcp", "claude", "cursor", "screenshot", "browser-extension", "ai-agent"]
 requires-python = ">=3.11"
 dependencies = [
-    "mcp>=1.28",
+    "mcp>=1.28,<2",  # 2.x renamed FastMCP → MCPServer; port before lifting
     "uvicorn>=0.30",
 ]
 
@@ -16,7 +20,7 @@ dependencies = [
 dev = ["pytest>=8", "httpx>=0.27"]
 
 [project.scripts]
-clip-bridge = "server:main"
+clip-bridge = "clip_bridge:main"
 
 [tool.setuptools]
-py-modules = ["server"]
+py-modules = ["clip_bridge"]

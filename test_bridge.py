@@ -8,7 +8,7 @@ import zlib
 import pytest
 from starlette.testclient import TestClient
 
-import server
+import clip_bridge as server
 
 
 def _png() -> str:
@@ -167,3 +167,44 @@ def test_cli_capture_dir(monkeypatch, tmp_path):
     assert server._SAVE_ROOT == tmp_path / "other"
     server._apply_cli(["--no-save"])
     assert server._SAVE is False
+
+
+def test_latest_serves_full_clip_for_peers(client):
+    client.post("/capture", json=_body())
+    d = client.get("/latest").json()
+    assert d["latest"]["url"] == "https://app.example.com/x"
+    assert len(d["latest"]["tiles"]) == 2
+    assert d["history"][-1]["note"] == "n"
+
+
+def test_peer_mode_reads_from_owner(monkeypatch):
+    # stdio bridge that lost the port race: tools read the owner's store.
+    monkeypatch.setattr(server, "_OWNER", False)
+    owner = {"latest": {**_body(), "dir": None}, "history": [{"url": "u"}]}
+    monkeypatch.setattr(server, "_peer", lambda path: owner)
+    out = server.get_latest_capture()
+    assert "https://app.example.com/x" in out[0] and len(out) == 3  # summary + 2 tiles
+    assert '"u"' in server.list_recent_captures()
+
+
+def test_peer_mode_owner_gone(monkeypatch):
+    monkeypatch.setattr(server, "_OWNER", False)
+    def boom(path):
+        raise OSError("connection refused")
+    monkeypatch.setattr(server, "_peer", boom)
+    assert server.get_latest_capture()[0].startswith("No capture yet")
+
+
+def test_try_bind_refuses_taken_port(monkeypatch):
+    import socket
+    held = socket.socket()
+    held.bind(("127.0.0.1", 0))
+    held.listen()
+    monkeypatch.setattr(server, "PORT", held.getsockname()[1])
+    try:
+        assert server._try_bind() is None
+    finally:
+        held.close()
+    sock = server._try_bind()  # freed → we take it
+    assert sock is not None
+    sock.close()

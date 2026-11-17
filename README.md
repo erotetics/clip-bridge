@@ -12,14 +12,43 @@ Claude Code, Cursor, Windsurf, Zed, or any other MCP client.
 
 **One process, two faces** (verified design):
 - `POST /capture` — the browser extension sends a clipped page here.
-- MCP over streamable-HTTP at `/mcp` — your agent connects and pulls it in.
+- MCP — your agent pulls it in, over stdio (the client launches the bridge) or
+  streamable-HTTP at `/mcp` (always-on service).
 
 Nothing leaves the machine: the capture is held in memory (and optionally on
 disk, under your control). This is the local companion of the **Clip** browser
 extension — one capture engine with pluggable destinations; this bridge is the
 "send it to my AI agent" destination. No backend, no accounts, no egress.
 
-## Setup (recommended): one command, always running
+## Quick start: let your AI app run it (nothing to install as a service)
+
+Add the bridge to your MCP client as a **stdio** server. The client starts it
+with each session (via [`uvx`](https://docs.astral.sh/uv/)), and while the
+session is open it also listens on `127.0.0.1:7777` for the extension.
+
+```bash
+# Claude Code
+claude mcp add capture -- uvx clip-bridge --stdio
+```
+
+```json
+// Cursor (.cursor/mcp.json), Claude Desktop (claude_desktop_config.json),
+// Windsurf, and most JSON-config clients
+{ "mcpServers": { "capture": { "command": "uvx", "args": ["clip-bridge", "--stdio"] } } }
+```
+
+```json
+// VS Code (.vscode/mcp.json)
+{ "servers": { "capture": { "type": "stdio", "command": "uvx", "args": ["clip-bridge", "--stdio"] } } }
+```
+
+Clips are saved to `~/.clip-bridge/captures/` (override: `--capture-dir` or
+`CLIP_HOME`). Several sessions at once are fine: the first one holds the port
+and the others read clips from it; when it closes, another takes over within
+a few seconds. **Trade-off:** with no AI session open, nothing is listening, so
+clips need the always-on service below if you clip before opening your agent.
+
+## Always-on service (optional): one command, always running
 
 The installers create the venv if needed and register the bridge as an
 always-on user service: it starts on login, restarts if it dies, and is simply
@@ -78,8 +107,9 @@ pip install -e ".[dev]" && pytest -q   # hermetic: no network, no real Claude
 
 ## Wire into your agent (any MCP client)
 
-The bridge speaks standard streamable-HTTP MCP at `http://localhost:7777/mcp` —
-register it however your client registers MCP servers:
+Using the **stdio** quick start above? You're already wired; skip to *In the
+extension*. With the **always-on service**, the bridge speaks streamable-HTTP MCP
+at `http://localhost:7777/mcp`; register it however your client registers MCP servers:
 
 ```bash
 # Claude Code
