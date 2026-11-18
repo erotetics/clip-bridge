@@ -5,9 +5,11 @@ On each prompt it asks the bridge whether a new clip arrived; if so, it injects
 the clip's metadata as additional context so the live session sees it *without*
 the user mentioning it. The bridge returns a fresh clip only once, so this fires
 on the first prompt after a clip, not every turn. Bridge down / no clip → no-op.
+Set CLIP_PUNCHLIST=1 to also have the agent log each clip to PUNCHLIST.md.
 """
 
 import json
+import os
 import sys
 import urllib.request
 
@@ -54,11 +56,14 @@ def main() -> None:
         lines.append(
             f"- {d['tiles']} screenshot tile(s) available — call get_latest_capture to view them."
         )
-    lines.append(
-        "Action: review this clip and append a dated entry to PUNCHLIST.md "
-        "(create it if missing): the issue(s) and the file or CSS selector to fix. "
-        "Keep it terse."
-    )
+    if os.environ.get("CLIP_PUNCHLIST") == "1":
+        lines.append(
+            "Action: review this clip and append a dated entry to PUNCHLIST.md "
+            "(create it if missing): the issue(s) and the file or CSS selector to fix. "
+            "Keep it terse."
+        )
+    else:
+        lines.append("Treat this clip as context for my message.")
 
     print(
         json.dumps(
